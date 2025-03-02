@@ -43,6 +43,10 @@ public class User {
         this.roles = new HashSet<>(); // Инициализация в конструкторе по умолчанию
     }
 
+    public User(Long id) {
+        this.id = id;
+    }
+
     public User(String username, String email, String passwordHash) {
         this.username = username;
         this.email = email;

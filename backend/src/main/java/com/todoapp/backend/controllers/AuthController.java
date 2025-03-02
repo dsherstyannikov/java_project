@@ -13,6 +13,7 @@ import com.todoapp.backend.services.UserDetailsImpl;
 import com.todoapp.backend.services.UserDetailsServiceImpl;
 
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -22,13 +23,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
-
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,115 +63,139 @@ public class AuthController {
         this.userDetailsService = userDetailsService;
     }
 
-//    private ResponseEntity makeTokensResponse(UserDetailsImpl userDetails) {
-//        // Генерация токенов
-//        String accessToken = jwtUtil.generateToken(userDetails);
-//        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-//
-//        // Создаем HttpOnly куку для refresh-токена
-//        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
-//                .httpOnly(true)
-//                .secure(false) // Используйте true, если используете HTTPS
-//                .path("/api/v1/auth/refresh")
-//                .maxAge(7 * 24 * 60 * 60) // 7 дней
-//                .sameSite("Strict") // Защита от CSRF
-//                .build();
-//
-//        // Возвращаем access-токен в теле ответа и refresh-токен в куке
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-//                .body(new JwtResponse(accessToken, null)); // refresh-токен не возвращаем в теле
-//    }
-
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> authenticateUser(@RequestBody LoginRequest loginRequest,
+    public ResponseEntity<?> authenticateUser(@RequestBody @Valid LoginRequest loginRequest,
+            BindingResult bindingResult,
             HttpServletResponse response) {
+
+        // Проверяем, есть ли ошибки валидации
+        if (bindingResult.hasErrors()) {
+            StringBuilder errorMessage = new StringBuilder("Ошибка валидации: ");
+            for (FieldError fieldError : bindingResult.getFieldErrors()) {
+                errorMessage.append(fieldError.getField())
+                        .append(" - ")
+                        .append(fieldError.getDefaultMessage())
+                        .append("; ");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorDetails(new Date(), errorMessage.toString(), "/api/v1/auth/login"));
+        }
+
         try {
-            // Аутентификация пользователя по email
+            if (!userRepository.existsByEmail(loginRequest.getEmail())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorDetails(new Date(), "Пользователь с таким email не найден.",
+                                "/api/v1/auth/login"));
+            }
+
+            // Аутентификация пользователя по email и паролю
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
-    
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
-    
+
             // Получаем UserDetails из аутентификации
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-    
+
             // Генерация токенов
             String accessToken = jwtUtil.generateToken(userDetails);
             String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-    
+
             // Создаем HttpOnly куку для refresh-токена
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
-                    .secure(false) // Используйте true, если используете HTTPS
+                    .secure(false)
                     .path("/api/v1/auth/refresh")
                     .maxAge(7 * 24 * 60 * 60) // 7 дней
                     .sameSite("Strict") // Защита от CSRF
                     .build();
-    
+
             // Возвращаем access-токен в теле ответа и refresh-токен в куке
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                     .body(new JwtResponse(accessToken, null)); // refresh-токен не возвращаем в теле
+        } catch (AuthenticationException e) {
+            logger.error("Authentication failed: ", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorDetails(new Date(), "Неверный email или пароль.", "/api/v1/auth/login"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body(null);
+            logger.error("Login error: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorDetails(new Date(), "Произошла внутренняя ошибка при аутентификации.",
+                            "/api/v1/auth/login"));
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<JwtResponse> registerUser(@RequestBody RegisterRequest signUpRequest) {
+    public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUpRequest,
+            BindingResult bindingResult) {
+        // Проверяем, есть ли ошибки валидации
+        if (bindingResult.hasErrors()) {
+            StringBuilder errorMessage = new StringBuilder("Ошибка валидации: ");
+            for (FieldError fieldError : bindingResult.getFieldErrors()) {
+                errorMessage.append(fieldError.getField())
+                        .append(" - ")
+                        .append(fieldError.getDefaultMessage())
+                        .append("; ");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorDetails(new Date(), errorMessage.toString(), "/api/v1/auth/register"));
+        }
+
         try {
-            // Проверка существования пользователя
             if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-                return ResponseEntity.badRequest().body(null);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(new ErrorDetails(new Date(), "Имя пользователя занято.", "/api/v1/auth/register"));
             }
             if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-                return ResponseEntity.badRequest().body(null);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(new ErrorDetails(new Date(), "Почта уже используется.", "/api/v1/auth/register"));
             }
 
-            // Хеширование пароля
+            // Хешируем пароль
             String hashedPassword = passwordEncoder.encode(signUpRequest.getPassword());
 
-            // Создание пользователя
+            // Создаем пользователя
             User user = new User(
                     signUpRequest.getUsername(),
                     signUpRequest.getEmail(),
-                    hashedPassword // Используем хешированный пароль
-            );
+                    hashedPassword);
 
-            // Назначение роли "ROLE_USER"
+            // Назначаем роль "ROLE_USER"
             Role userRole = roleRepository.findByName("ROLE_USER")
                     .orElseThrow(() -> new RuntimeException("Роль не найдена"));
             user.addRole(userRole);
 
-            // Сохранение пользователя
+            // Сохраняем пользователя
             userRepository.save(user);
 
-            // Создаем UserDetailsImpl для генерации токенов
-            UserDetailsImpl userDetails = UserDetailsImpl.build(user);
-
             // Генерация токенов
+            UserDetailsImpl userDetails = UserDetailsImpl.build(user);
             String accessToken = jwtUtil.generateToken(userDetails);
             String refreshToken = jwtUtil.generateRefreshToken(userDetails);
 
-            // Возврат токенов в ответе
-            // return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken));
             // Создаем HttpOnly куку для refresh-токена
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
-                    .secure(false) // Используйте true, если используете HTTPS
+                    .secure(false)
                     .path("/api/v1/auth/refresh")
-                    .maxAge(7 * 24 * 60 * 60) // 7 дней
-                    .sameSite("Strict") // Защита от CSRF
+                    .maxAge(7 * 24 * 60 * 60)
+                    .sameSite("Strict")
                     .build();
 
-            // Возвращаем access-токен в теле ответа и refresh-токен в куке
+            // Возвращаем успешный ответ
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(new JwtResponse(accessToken, null)); // refresh-токен не возвращаем в теле
+                    .body(new JwtResponse(accessToken, null));
+
+        } catch (RuntimeException e) {
+            logger.error("Role assignment failed: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorDetails(new Date(), "Не удалось найти роль пользователя.", "/api/v1/auth/register"));
         } catch (Exception e) {
             logger.error("Registration error: ", e);
-            return ResponseEntity.status(500).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorDetails(new Date(), "Произошла ошибка при регистрации.", "/api/v1/auth/register"));
         }
     }
 
@@ -182,40 +209,42 @@ public class AuthController {
             }
 
             // Проверка валидности refresh-токена
-            if (jwtUtil.validateToken(refreshTokenCookie)) {
-                // Извлекаем username из токена
-                String username = jwtUtil.extractUsername(refreshTokenCookie);
-
-                // Загружаем пользователя по username
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                // Генерация новых токенов
-                String newAccessToken = jwtUtil.generateToken(userDetails);
-                String newRefreshToken = jwtUtil.generateRefreshToken(userDetails);
-
-                // Создаем HttpOnly куку для нового refresh-токена
-                ResponseCookie refreshTokenCookieResponse = ResponseCookie.from("refreshToken", newRefreshToken)
-                        .httpOnly(true)
-                        .secure(false) // Используйте true, если используете HTTPS
-                        .path("/api/v1/auth/refresh")
-                        .maxAge(7 * 24 * 60 * 60) // 7 дней
-                        .sameSite("Strict") // Защита от CSRF
-                        .build();
-
-                // Возвращаем новый access-токен в теле ответа и новый refresh-токен в куке
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.SET_COOKIE, refreshTokenCookieResponse.toString())
-                        .body(new JwtResponse(newAccessToken, null)); // refresh-токен не возвращаем в теле
-            } else {
+            if (!jwtUtil.validateToken(refreshTokenCookie)) {
                 throw new RuntimeException("Invalid refresh token");
             }
-        } catch (Exception e) {
-            // Логируем ошибку для отладки
-            logger.error("Refresh token error: ", e);
 
-            // Возвращаем ошибку с описанием
+            // Извлекаем username из токена
+            String username = jwtUtil.extractUsername(refreshTokenCookie);
+
+            // Загружаем пользователя по username
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+            // Генерация новых токенов
+            String newAccessToken = jwtUtil.generateToken(userDetails);
+            String newRefreshToken = jwtUtil.generateRefreshToken(userDetails);
+
+            // Создаем HttpOnly куку для нового refresh-токена
+            ResponseCookie refreshTokenCookieResponse = ResponseCookie.from("refreshToken", newRefreshToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/api/v1/auth/refresh")
+                    .maxAge(7 * 24 * 60 * 60) // 7 дней
+                    .sameSite("Strict") // Защита от CSRF
+                    .build();
+
+            // Возвращаем новый access-токен в теле ответа и новый refresh-токен в куке
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookieResponse.toString())
+                    .body(new JwtResponse(newAccessToken, null)); // refresh-токен не возвращаем в теле
+        } catch (RuntimeException e) {
+            logger.error("Refresh token error: ", e);
             ErrorDetails errorDetails = new ErrorDetails(new Date(), e.getMessage(), "/api/v1/auth/refresh");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorDetails);
+        } catch (Exception e) {
+            logger.error("Refresh token processing error: ", e);
+            ErrorDetails errorDetails = new ErrorDetails(new Date(), "Произошла ошибка при обновлении токена.",
+                    "/api/v1/auth/refresh");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDetails);
         }
     }
 }

@@ -10,6 +10,17 @@ public class ProjectResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+
+    public ProjectResponse() {
+    }
+    public ProjectResponse(Long id, String name, String description, Long ownerId) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.ownerId = ownerId;
+        this.createdAt = LocalDateTime.now(); // Если нужно, добавьте текущее время
+        this.updatedAt = LocalDateTime.now(); // Если нужно, добавьте текущее время
+    }
     // Геттеры и сеттеры
     public Long getId() {
         return id;
@@ -58,4 +69,6 @@ public class ProjectResponse {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    
 }
