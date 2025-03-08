@@ -132,4 +132,8 @@ public class User {
         this.roles.remove(role);
         role.getUsers().remove(this);
     }
+
+    public boolean hasTelegramAccount() {
+        return this.telegramId != null;
+    }
 }

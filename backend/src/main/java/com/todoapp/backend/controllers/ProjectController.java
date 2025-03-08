@@ -4,13 +4,16 @@ import com.todoapp.backend.dto.CreateProjectRequest;
 import com.todoapp.backend.dto.ProjectResponse;
 import com.todoapp.backend.security.JwtUtil;
 import com.todoapp.backend.services.ProjectService;
+import com.todoapp.backend.services.UserDetailsImpl;
 import com.todoapp.backend.repositories.UserRepository; // Подключаем репозиторий
 import com.todoapp.backend.models.User; // Подключаем модель User
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -56,18 +59,32 @@ public class ProjectController {
         return null; // Если пользователь не найден
     }
 
+    // @GetMapping("/{id}")
+    // public ResponseEntity<ProjectResponse> getProjectById(
+    // @PathVariable Long id,
+    // HttpServletRequest httpRequest) {
+    // // Проверяем токен и извлекаем username
+    // String token = jwtUtil.extractTokenFromRequest(httpRequest);
+    // String username = jwtUtil.extractUsername(token);
+
+    // // Получаем проект по ID
+    // ProjectResponse response = projectService.getProjectById(id);
+
+    // return ResponseEntity.ok(response);
+    // }
+
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponse> getProjectById(
-            @PathVariable Long id,
-            HttpServletRequest httpRequest) {
-        // Проверяем токен и извлекаем username
-        String token = jwtUtil.extractTokenFromRequest(httpRequest);
-        String username = jwtUtil.extractUsername(token);
+    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        ProjectResponse project = projectService.getProjectById(id, userDetails.getId());
+        return ResponseEntity.ok(project);
+    }
 
-        // Получаем проект по ID
-        ProjectResponse response = projectService.getProjectById(id);
-
-        return ResponseEntity.ok(response);
+    @GetMapping("/")
+    public ResponseEntity<List<ProjectResponse>> getProjectsByOwner(
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        List<ProjectResponse> projects = projectService.getProjectsByOwner(userDetails.getId());
+        return ResponseEntity.ok(projects);
     }
 
     @PutMapping("/{id}")

@@ -113,7 +113,7 @@ public class AuthController {
             // Возвращаем access-токен в теле ответа и refresh-токен в куке
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(new JwtResponse(accessToken, null)); // refresh-токен не возвращаем в теле
+                    .body(new JwtResponse(accessToken)); // refresh-токен не возвращаем в теле
         } catch (AuthenticationException e) {
             logger.error("Authentication failed: ", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -186,7 +186,7 @@ public class AuthController {
             // Возвращаем успешный ответ
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(new JwtResponse(accessToken, null));
+                    .body(new JwtResponse(accessToken));
 
         } catch (RuntimeException e) {
             logger.error("Role assignment failed: ", e);
@@ -235,7 +235,7 @@ public class AuthController {
             // Возвращаем новый access-токен в теле ответа и новый refresh-токен в куке
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookieResponse.toString())
-                    .body(new JwtResponse(newAccessToken, null)); // refresh-токен не возвращаем в теле
+                    .body(new JwtResponse(newAccessToken)); // refresh-токен не возвращаем в теле
         } catch (RuntimeException e) {
             logger.error("Refresh token error: ", e);
             ErrorDetails errorDetails = new ErrorDetails(new Date(), e.getMessage(), "/api/v1/auth/refresh");
@@ -246,5 +246,22 @@ public class AuthController {
                     "/api/v1/auth/refresh");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDetails);
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser(HttpServletResponse response) {
+        // Создаем пустую куку для удаления refresh-токена
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/api/v1/auth/refresh")
+                .maxAge(0) // Устанавливаем срок жизни куки в 0, чтобы удалить её
+                .sameSite("Strict")
+                .build();
+
+        // Возвращаем успешный ответ с пустой кукой
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .body(new JwtResponse(null)); // Возвращаем только accessToken, refreshToken не нужен
     }
 }
