@@ -7,10 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class RegisterRequest {
-    @NotNull(message = "Имя пользователя не может быть null.")
-    @NotEmpty(message = "Имя пользователя не может быть пустым.")
-    @Size(min = 3, max = 20, message = "Имя пользователя должно содержать от 3 до 20 символов.")
-    private String username;
+    // @NotNull(message = "Имя пользователя не может быть null.")
+    // @NotEmpty(message = "Имя пользователя не может быть пустым.")
+    // @Size(min = 3, max = 20, message = "Имя пользователя должно содержать от 3 до 20 символов.")
+    // private String username;
 
     @NotNull(message = "Email не может быть null.")
     @NotEmpty(message = "Email не может быть пустым.")
@@ -23,13 +23,13 @@ public class RegisterRequest {
     private String password;
 
     // Getters and Setters
-    public String getUsername() {
-        return username;
-    }
+    // public String getUsername() {
+    //     return username;
+    // }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    // public void setUsername(String username) {
+    //     this.username = username;
+    // }
 
     public String getEmail() {
         return email;

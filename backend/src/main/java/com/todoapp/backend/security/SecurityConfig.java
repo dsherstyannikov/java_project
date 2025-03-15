@@ -5,6 +5,7 @@ import com.todoapp.backend.services.UserDetailsServiceImpl;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,67 +31,20 @@ public class SecurityConfig {
         this.jwtRequestFilter = jwtRequestFilter;
     }
 
-    // @Bean
-    // public SecurityFilterChain securityFilterChain(HttpSecurity http) throws
-    // Exception {
-    // http
-    // .csrf(csrf -> csrf.disable()) // Отключаем CSRF
-    // .cors(cors -> cors.configurationSource(request -> {
-    // CorsConfiguration config = new CorsConfiguration();
-    // config.setAllowedOrigins(Arrays.asList("*")); // Настройте под свои origin
-    // config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE",
-    // "OPTIONS"));
-    // config.setAllowedHeaders(Arrays.asList("authorization", "content-type",
-    // "x-auth-token"));
-    // config.setExposedHeaders(Arrays.asList("x-auth-token"));
-    // config.setAllowCredentials(true);
-    // return config;
-    // }))
-    // .authorizeHttpRequests(authz -> authz
-    // .requestMatchers("/api/v1/auth/**").permitAll() // Путь для регистрации
-    // .anyRequest().authenticated() // Все остальные пути требуют аутентификации
-    // )
-    // .sessionManagement(session ->
-    // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Отключаем
-    // сессии
-    // )
-    // .addFilterBefore(jwtRequestFilter,
-    // UsernamePasswordAuthenticationFilter.class); // Добавляем фильтр JWT
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
-    // return http.build();
-    // }
-
-    // @Bean
-    // public SecurityFilterChain securityFilterChain(HttpSecurity http,
-    // CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws
-    // Exception {
-    // http
-    // .csrf(csrf -> csrf.disable())
-    // .cors(cors -> cors.configurationSource(request -> {
-    // CorsConfiguration config = new CorsConfiguration();
-    // config.setAllowedOrigins(Arrays.asList("*"));
-    // config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE",
-    // "OPTIONS"));
-    // config.setAllowedHeaders(Arrays.asList("authorization", "content-type",
-    // "x-auth-token"));
-    // config.setExposedHeaders(Arrays.asList("x-auth-token"));
-    // config.setAllowCredentials(true);
-    // return config;
-    // }))
-    // .authorizeHttpRequests(authz -> authz
-    // .requestMatchers("/api/v1/auth/**").permitAll()
-    // .anyRequest().authenticated())
-    // .exceptionHandling(exceptions -> exceptions
-    // .authenticationEntryPoint(customAuthenticationEntryPoint) // Используем
-    // кастомный обработчик
-    // )
-    // .sessionManagement(session ->
-    // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-    // .addFilterBefore(jwtRequestFilter,
-    // UsernamePasswordAuthenticationFilter.class);
-
-    // return http.build();
-    // }
+//     @Bean
+// public CookieSerializer cookieSerializer() {
+//     DefaultCookieSerializer serializer = new DefaultCookieSerializer();
+//     serializer.setCookieName("JSESSIONID"); // Убедитесь, что название совпадает с вашим приложением
+//     serializer.setCookiePath("/");
+//     serializer.setDomainNamePattern("^.+?\\.(\\w+\\.[a-z]+)$"); // Для работы с поддоменами
+//     serializer.setSameSite("None"); // Разрешаем кросс-доменные куки
+//     serializer.setUseSecureCookie(true); // Нужно для работы в браузерах с HTTPS
+//     serializer.setUseHttpOnlyCookie(true); // Защита от XSS
+//     return serializer;
+// }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -99,7 +53,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(Arrays.asList("*"));
+                    config.setAllowedOrigins(Arrays.asList(frontendUrl));
                     config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
                     config.setExposedHeaders(Arrays.asList("x-auth-token"));
