@@ -106,7 +106,7 @@ public class AuthController {
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
                     .secure(false)
-                    .path("/api/v1/auth/refresh")
+                    .path("/")
                     .maxAge(7 * 24 * 60 * 60) // 7 дней
                     .sameSite("None") // Защита от CSRF
                     .build();
@@ -251,7 +251,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(false)
-                .path("/api/v1/auth/refresh")
+                .path("/")
                 .maxAge(7 * 24 * 60 * 60)
                 .sameSite("None")
                 .build();
@@ -300,7 +300,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
             ResponseCookie refreshTokenCookieResponse = ResponseCookie.from("refreshToken", newRefreshToken)
                     .httpOnly(true)
                     .secure(false)
-                    .path("/api/v1/auth/refresh")
+                    .path("/")
                     .maxAge(7 * 24 * 60 * 60) // 7 дней
                     .sameSite("None") // Защита от CSRF
                     .build();
@@ -327,7 +327,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(false)
-                .path("/api/v1/auth/refresh")
+                .path("/")
                 .maxAge(0) // Устанавливаем срок жизни куки в 0, чтобы удалить её
                 .sameSite("None")
                 .build();
