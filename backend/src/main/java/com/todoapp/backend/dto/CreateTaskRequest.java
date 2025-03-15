@@ -12,6 +12,7 @@ public class CreateTaskRequest {
     private String description;
     private Long prevId; // ID предыдущей задачи
     private Long nextId; // ID следующей задачи
+    private Long kanbanGroupId;
     private LocalDateTime dueDate;
     private Integer priority;
     private Long colorId;
@@ -71,5 +72,13 @@ public class CreateTaskRequest {
 
     public void setColorId(Long colorId) {
         this.colorId = colorId;
+    }
+
+    public Long getKanbanGroupId() {
+        return kanbanGroupId;
+    }
+
+    public void setKanbanGroup(Long kanbanGroupId){
+        this.kanbanGroupId = kanbanGroupId;
     }
 }

@@ -37,51 +37,57 @@ public class KanbanGroupService {
     public KanbanGroupResponse createKanbanGroup(Long projectId, CreateKanbanGroupRequest request, Long ownerId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + projectId));
-    
+
         if (!project.getOwnerId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this project");
         }
-    
+
         if (request.getPrevId() == null && request.getNextId() == null) {
             List<KanbanGroup> groups = kanbanGroupRepository.findByProjectIdOrderByOrderPositionAsc(projectId);
             KanbanGroup lastGroup = groups.isEmpty() ? null : groups.get(groups.size() - 1);
-            String orderPosition = lastGroup == null ? "a0000000" : LexoRank.calculateAfter(lastGroup.getOrderPosition());
-    
+            String orderPosition = lastGroup == null ? "a0000000"
+                    : LexoRank.calculateAfter(lastGroup.getOrderPosition());
+
             KanbanGroup kanbanGroup = new KanbanGroup();
             kanbanGroup.setName(request.getName());
             kanbanGroup.setOrderPosition(orderPosition);
             kanbanGroup.setProject(project);
-    
+
             KanbanGroup savedKanbanGroup = kanbanGroupRepository.save(kanbanGroup);
             return mapToKanbanGroupResponse(savedKanbanGroup);
         }
-    
+
         if ((request.getPrevId() != null && request.getNextId() != null)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Either prevId or nextId must be provided, or both null to append at the end");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Either prevId or nextId must be provided, or both null to append at the end");
         }
-    
-        KanbanGroup prevGroup = request.getPrevId() != null ? kanbanGroupRepository.findById(request.getPrevId()).orElse(null) : null;
-        KanbanGroup nextGroup = request.getNextId() != null ? kanbanGroupRepository.findById(request.getNextId()).orElse(null) : null;
-    
+
+        KanbanGroup prevGroup = request.getPrevId() != null
+                ? kanbanGroupRepository.findById(request.getPrevId()).orElse(null)
+                : null;
+        KanbanGroup nextGroup = request.getNextId() != null
+                ? kanbanGroupRepository.findById(request.getNextId()).orElse(null)
+                : null;
+
         if ((request.getPrevId() != null && prevGroup == null) || (request.getNextId() != null && nextGroup == null)) {
             throw new KanbanGroupNotFoundException("Invalid prevId or nextId provided");
         }
-    
+
         String orderPosition = calculateOrderPosition(prevGroup, nextGroup);
         if (orderPosition == null) {
             redistributeOrderPositions(projectId);
             orderPosition = calculateOrderPosition(prevGroup, nextGroup);
         }
-    
+
         KanbanGroup kanbanGroup = new KanbanGroup();
         kanbanGroup.setName(request.getName());
         kanbanGroup.setOrderPosition(orderPosition);
         kanbanGroup.setProject(project);
-    
+
         KanbanGroup savedKanbanGroup = kanbanGroupRepository.save(kanbanGroup);
         return mapToKanbanGroupResponse(savedKanbanGroup);
     }
-    
+
     private void redistributeOrderPositions(Long projectId) {
         List<KanbanGroup> groups = kanbanGroupRepository.findByProjectIdOrderByOrderPositionAsc(projectId);
         if (groups.isEmpty()) {
@@ -94,8 +100,7 @@ public class KanbanGroupService {
         }
         kanbanGroupRepository.saveAll(groups);
     }
-    
-    
+
     private String calculateOrderPosition(KanbanGroup prevGroup, KanbanGroup nextGroup) {
         if (prevGroup == null && nextGroup == null) {
             return "a0000000";
@@ -107,11 +112,9 @@ public class KanbanGroupService {
             return LexoRank.calculateBetween(prevGroup.getOrderPosition(), nextGroup.getOrderPosition());
         }
     }
-    
-    
-    
 
-    public KanbanGroupResponse updateKanbanGroup(Long projectId, Long groupId, CreateKanbanGroupRequest request, Long ownerId) {
+    public KanbanGroupResponse updateKanbanGroup(Long projectId, Long groupId, CreateKanbanGroupRequest request,
+            Long ownerId) {
         // Проверяем, существует ли проект и принадлежит ли он пользователю
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + projectId));
@@ -125,15 +128,26 @@ public class KanbanGroupService {
                 .orElseThrow(() -> new KanbanGroupNotFoundException("Kanban group not found with id: " + groupId));
 
         // Получаем предыдущую и следующую группы
-        KanbanGroup prevGroup = request.getPrevId() != null ?
-                kanbanGroupRepository.findById(request.getPrevId())
-                        .orElseThrow(() -> new KanbanGroupNotFoundException("Previous group not found with id: " + request.getPrevId())) :
-                null;
+        KanbanGroup prevGroup = request.getPrevId() != null ? kanbanGroupRepository.findById(request.getPrevId())
+                .orElseThrow(() -> new KanbanGroupNotFoundException(
+                        "Previous group not found with id: " + request.getPrevId()))
+                : null;
 
-        KanbanGroup nextGroup = request.getNextId() != null ?
-                kanbanGroupRepository.findById(request.getNextId())
-                        .orElseThrow(() -> new KanbanGroupNotFoundException("Next group not found with id: " + request.getNextId())) :
-                null;
+        KanbanGroup nextGroup = request.getNextId() != null ? kanbanGroupRepository.findById(request.getNextId())
+                .orElseThrow(
+                        () -> new KanbanGroupNotFoundException("Next group not found with id: " + request.getNextId()))
+                : null;
+
+        // Проверка на одновременную передачу prevId и nextId
+        // if (request.getPrevId() != null && request.getNextId() != null) {
+        //     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide either prevId or nextId, not both");
+        // }
+
+        // String orderPosition = calculateOrderPosition(prevGroup, nextGroup);
+        // if (orderPosition == null) {
+            // redistributeOrderPositions(projectId);
+            // orderPosition = calculateOrderPosition(prevGroup, nextGroup);
+        // }
 
         // Вычисляем новый order_position
         String orderPosition = calculateOrderPosition(prevGroup, nextGroup);
@@ -145,7 +159,9 @@ public class KanbanGroupService {
         }
 
         // Обновляем данные канбан-группы
-        kanbanGroup.setName(request.getName());
+        if (request.getName() != null){
+            kanbanGroup.setName(request.getName());
+        }
         kanbanGroup.setOrderPosition(orderPosition);
         // kanbanGroup.setUpdatedAt(LocalDateTime.now());
 
@@ -153,36 +169,40 @@ public class KanbanGroupService {
         return mapToKanbanGroupResponse(updatedKanbanGroup);
     }
 
-    // private String calculateOrderPosition(KanbanGroup prevGroup, KanbanGroup nextGroup) {
-    //     if (prevGroup == null && nextGroup == null) {
-    //         // Если это первая группа, начинаем с минимального значения
-    //         return "a0000000";
-    //     } else if (prevGroup == null) {
-    //         // Если это первая группа, но есть следующая, вычисляем значение перед следующей
-    //         return LexoRank.calculateBefore(nextGroup.getOrderPosition());
-    //     } else if (nextGroup == null) {
-    //         // Если это последняя группа, вычисляем значение после предыдущей
-    //         return LexoRank.calculateAfter(prevGroup.getOrderPosition());
-    //     } else {
-    //         // Если есть и предыдущая, и следующая группы, вычисляем значение между ними
-    //         return LexoRank.calculateBetween(prevGroup.getOrderPosition(), nextGroup.getOrderPosition());
-    //     }
+    // private String calculateOrderPosition(KanbanGroup prevGroup, KanbanGroup
+    // nextGroup) {
+    // if (prevGroup == null && nextGroup == null) {
+    // // Если это первая группа, начинаем с минимального значения
+    // return "a0000000";
+    // } else if (prevGroup == null) {
+    // // Если это первая группа, но есть следующая, вычисляем значение перед
+    // следующей
+    // return LexoRank.calculateBefore(nextGroup.getOrderPosition());
+    // } else if (nextGroup == null) {
+    // // Если это последняя группа, вычисляем значение после предыдущей
+    // return LexoRank.calculateAfter(prevGroup.getOrderPosition());
+    // } else {
+    // // Если есть и предыдущая, и следующая группы, вычисляем значение между ними
+    // return LexoRank.calculateBetween(prevGroup.getOrderPosition(),
+    // nextGroup.getOrderPosition());
+    // }
     // }
 
     // private void redistributeOrderPositions(Long projectId) {
-    //     List<KanbanGroup> groups = kanbanGroupRepository.findByProjectIdOrderByOrderPositionAsc(projectId);
-    //     if (groups.isEmpty()) {
-    //         return;
-    //     }
+    // List<KanbanGroup> groups =
+    // kanbanGroupRepository.findByProjectIdOrderByOrderPositionAsc(projectId);
+    // if (groups.isEmpty()) {
+    // return;
+    // }
 
-    //     // Перераспределяем order_position
-    //     String currentPosition = "a0000000";
-    //     for (KanbanGroup group : groups) {
-    //         group.setOrderPosition(currentPosition);
-    //         currentPosition = LexoRank.calculateAfter(currentPosition);
-    //     }
+    // // Перераспределяем order_position
+    // String currentPosition = "a0000000";
+    // for (KanbanGroup group : groups) {
+    // group.setOrderPosition(currentPosition);
+    // currentPosition = LexoRank.calculateAfter(currentPosition);
+    // }
 
-    //     kanbanGroupRepository.saveAll(groups);
+    // kanbanGroupRepository.saveAll(groups);
     // }
 
     private KanbanGroupResponse mapToKanbanGroupResponse(KanbanGroup kanbanGroup) {
