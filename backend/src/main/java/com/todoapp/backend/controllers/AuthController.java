@@ -306,7 +306,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                     .secure(false)
                     .path("/")
                     .maxAge(7 * 24 * 60 * 60) // 7 дней
-                //     .sameSite("Strict") // Защита от CSRF
+                    .sameSite("lax") // Защита от CSRF
                     .build();
 
             // Возвращаем новый access-токен в теле ответа и новый refresh-токен в куке
