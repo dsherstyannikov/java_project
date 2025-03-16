@@ -1,21 +1,9 @@
 package com.todoapp.backend.controllers;
 
-import com.todoapp.backend.models.Role;
-import com.todoapp.backend.models.User;
-import com.todoapp.backend.dto.LoginRequest;
-import com.todoapp.backend.dto.RegisterRequest;
-import com.todoapp.backend.exceptions.ErrorDetails;
-import com.todoapp.backend.dto.JwtResponse;
-import com.todoapp.backend.repositories.RoleRepository;
-import com.todoapp.backend.repositories.UserRepository;
-import com.todoapp.backend.security.JwtUtil;
-import com.todoapp.backend.services.UserDetailsImpl;
-import com.todoapp.backend.services.UserDetailsServiceImpl;
-import com.todoapp.backend.utils.UsernameGenerator;
+import java.util.Date;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,13 +16,29 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Date;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.todoapp.backend.dto.JwtResponse;
+import com.todoapp.backend.dto.LoginRequest;
+import com.todoapp.backend.dto.RegisterRequest;
+import com.todoapp.backend.exceptions.ErrorDetails;
+import com.todoapp.backend.models.Role;
+import com.todoapp.backend.models.User;
+import com.todoapp.backend.repositories.RoleRepository;
+import com.todoapp.backend.repositories.UserRepository;
+import com.todoapp.backend.security.JwtUtil;
+import com.todoapp.backend.services.UserDetailsImpl;
+import com.todoapp.backend.services.UserDetailsServiceImpl;
+import com.todoapp.backend.utils.UsernameGenerator;
+
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -108,7 +112,7 @@ public class AuthController {
                     .secure(false)
                     .path("/")
                     .maxAge(7 * 24 * 60 * 60) // 7 дней
-                    .sameSite("None") // Защита от CSRF
+                    .sameSite("lax") // Защита от CSRF
                     .build();
 
             // Возвращаем access-токен в теле ответа и refresh-токен в куке
