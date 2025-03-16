@@ -257,7 +257,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                 .secure(false)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60)
-                // .sameSite("Strict")
+                .sameSite("lax")
                 .build();
 
         // Возвращаем успешный ответ
@@ -333,7 +333,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                 .secure(false)
                 .path("/")
                 .maxAge(0) // Устанавливаем срок жизни куки в 0, чтобы удалить её
-                // .sameSite("Strict")
+                .sameSite("lax")
                 .build();
 
         // Возвращаем успешный ответ с пустой кукой
