@@ -257,7 +257,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                 .secure(false)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60)
-                .sameSite("None")
+                // .sameSite("Strict")
                 .build();
 
         // Возвращаем успешный ответ
@@ -306,7 +306,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                     .secure(false)
                     .path("/")
                     .maxAge(7 * 24 * 60 * 60) // 7 дней
-                    .sameSite("None") // Защита от CSRF
+                //     .sameSite("Strict") // Защита от CSRF
                     .build();
 
             // Возвращаем новый access-токен в теле ответа и новый refresh-токен в куке
@@ -333,7 +333,7 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                 .secure(false)
                 .path("/")
                 .maxAge(0) // Устанавливаем срок жизни куки в 0, чтобы удалить её
-                .sameSite("None")
+                // .sameSite("Strict")
                 .build();
 
         // Возвращаем успешный ответ с пустой кукой

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public class CreateKanbanGroupRequest {
 
-    @NotBlank(message = "Name is required")
+    // @NotBlank(message = "Name is required")
     private String name;
 
     private Long prevId; // ID предыдущей группы
