@@ -38,53 +38,6 @@ public class ProjectService {
     @Autowired
     private UserRepository userRepository;
 
-    // public ProjectResponse createProject(CreateProjectRequest request, Long
-    // ownerId) {
-
-    // // Проверка, существует ли проект с таким названием у этого пользователя
-    // Optional<Project> existingProject =
-    // projectRepository.findByNameAndOwnerId(request.getName(), ownerId);
-
-    // if (existingProject.isPresent()) {
-    // throw new ResourceAlreadyExistsException("Проект с таким названием уже
-    // существует.");
-    // // throw new ResponseStatusException(HttpStatus.CONFLICT, "Проект с таким
-    // // названием уже существует");
-    // }
-
-    // // Создаем новый проект
-    // Project project = new Project();
-    // project.setName(request.getName());
-    // project.setDescription(request.getDescription());
-    // project.setOwnerId(ownerId); // Устанавливаем владельца
-    // project.setCreatedAt(LocalDateTime.now());
-    // project.setUpdatedAt(LocalDateTime.now());
-
-    // Project savedProject = projectRepository.save(project);
-
-    // // Find the user by ownerId (instead of userId)
-    // User user = userRepository.findById(ownerId)
-    // .orElseThrow(() -> new RuntimeException("User not found"));
-
-    // // Получаем роль владельца (Owner)
-    // // System.out.println(projectRolesRepository.findByName("Owner"));
-    // ProjectRoles role = projectRolesRepository.findByName("Owner")
-    // .orElseThrow(() -> new RuntimeException("Role not found"));
-
-    // // Создаем новый ProjectMember
-    // ProjectMembers projectMember = new ProjectMembers();
-    // projectMember.setProject(project); // Set Project
-    // projectMember.setUser(user); // Set User
-    // projectMember.setRoleInProject(role); // Set Role
-    // projectMember.setJoinedAt(LocalDateTime.now()); // Set Join Time
-
-    // // Сохраняем ProjectMember в репозитории
-    // projectMembersRepository.save(projectMember);
-
-    // // Возвращаем ответ с данными проекта
-    // return mapToProjectResponse(savedProject);
-    // }
-
     public ProjectResponse createProject(CreateProjectRequest request, Long ownerId) {
         // Проверка, существует ли проект с таким названием у этого пользователя
         Optional<Project> existingProject = projectRepository.findByNameAndOwnerId(request.getName(), ownerId);
@@ -117,6 +70,17 @@ public class ProjectService {
         }
 
         return mapToProjectResponse(project);
+    }
+
+    public Project getProjectByIdWithOwnerCheck(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + projectId));
+        
+        if (!project.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        
+        return project;
     }
 
     public List<ProjectResponse> getProjectsByOwner(Long ownerId) {

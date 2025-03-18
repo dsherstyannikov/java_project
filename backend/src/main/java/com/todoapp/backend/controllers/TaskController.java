@@ -30,10 +30,12 @@ public class TaskController {
     @GetMapping
     public ResponseEntity<List<TaskResponse>> getTasksByGroupId(
             @PathVariable Long groupId,
+            @RequestParam(required = false) Boolean completed,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        List<TaskResponse> responses = taskService.getTasksByGroupId(groupId, userDetails.getId());
+        List<TaskResponse> responses = taskService.getTasksByGroupId(groupId, userDetails.getId(), completed);
         return ResponseEntity.ok(responses);
     }
+
 
     @PutMapping("/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(

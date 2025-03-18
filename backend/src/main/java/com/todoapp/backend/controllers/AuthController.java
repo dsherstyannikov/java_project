@@ -131,78 +131,7 @@ public class AuthController {
         }
     }
 
-//     @PostMapping("/register")
-//     public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUpRequest,
-//             BindingResult bindingResult) {
-//         // Проверяем, есть ли ошибки валидации
-//         if (bindingResult.hasErrors()) {
-//             StringBuilder errorMessage = new StringBuilder("Ошибка валидации: ");
-//             for (FieldError fieldError : bindingResult.getFieldErrors()) {
-//                 errorMessage.append(fieldError.getField())
-//                         .append(" - ")
-//                         .append(fieldError.getDefaultMessage())
-//                         .append("; ");
-//             }
-//             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//                     .body(new ErrorDetails(new Date(), errorMessage.toString(), "/api/v1/auth/register"));
-//         }
 
-//         try {
-//             if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-//                 return ResponseEntity.status(HttpStatus.CONFLICT)
-//                         .body(new ErrorDetails(new Date(), "Имя пользователя занято.", "/api/v1/auth/register"));
-//             }
-//             if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-//                 return ResponseEntity.status(HttpStatus.CONFLICT)
-//                         .body(new ErrorDetails(new Date(), "Почта уже используется.", "/api/v1/auth/register"));
-//             }
-
-//             // Хешируем пароль
-//             String hashedPassword = passwordEncoder.encode(signUpRequest.getPassword());
-
-//             // Создаем пользователя
-//             User user = new User(
-//                     signUpRequest.getUsername(),
-//                     signUpRequest.getEmail(),
-//                     hashedPassword);
-
-//             // Назначаем роль "ROLE_USER"
-//             Role userRole = roleRepository.findByName("ROLE_USER")
-//                     .orElseThrow(() -> new RuntimeException("Роль не найдена"));
-//             user.addRole(userRole);
-
-//             // Сохраняем пользователя
-//             userRepository.save(user);
-
-//             // Генерация токенов
-//             UserDetailsImpl userDetails = UserDetailsImpl.build(user);
-//             String accessToken = jwtUtil.generateToken(userDetails);
-//             String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-
-//             // Создаем HttpOnly куку для refresh-токена
-//             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
-//                     .httpOnly(true)
-//                     .secure(false)
-//                     .path("/api/v1/auth/refresh")
-//                     .maxAge(7 * 24 * 60 * 60)
-//                     .sameSite("Strict")
-//                     .build();
-
-//             // Возвращаем успешный ответ
-//             return ResponseEntity.ok()
-//                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-//                     .body(new JwtResponse(accessToken));
-
-//         } catch (RuntimeException e) {
-//             logger.error("Role assignment failed: ", e);
-//             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                     .body(new ErrorDetails(new Date(), "Не удалось найти роль пользователя.", "/api/v1/auth/register"));
-//         } catch (Exception e) {
-//             logger.error("Registration error: ", e);
-//             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                     .body(new ErrorDetails(new Date(), "Произошла ошибка при регистрации.", "/api/v1/auth/register"));
-//         }
-//     }
 
 @PostMapping("/register")
 public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUpRequest,

@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 // import javax.management.Notification;
@@ -40,7 +41,23 @@ public class TaskService {
     @Autowired
     private NotificationService notificationService;
 
-    public List<TaskResponse> getTasksByGroupId(Long groupId, Long userId) {
+    // public List<TaskResponse> getTasksByGroupId(Long groupId, Long userId) {
+    // KanbanGroup kanbanGroup = kanbanGroupRepository.findById(groupId)
+    // .orElseThrow(() -> new KanbanGroupNotFoundException("Kanban group not found
+    // with id: " + groupId));
+
+    // if (!kanbanGroup.getProject().getOwnerId().equals(userId)) {
+    // throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have
+    // access to this group");
+    // }
+
+    // List<Task> tasks =
+    // taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
+    // return
+    // tasks.stream().map(this::mapToTaskResponse).collect(Collectors.toList());
+    // }
+
+    public List<TaskResponse> getTasksByGroupId(Long groupId, Long userId, Boolean completed) {
         KanbanGroup kanbanGroup = kanbanGroupRepository.findById(groupId)
                 .orElseThrow(() -> new KanbanGroupNotFoundException("Kanban group not found with id: " + groupId));
 
@@ -48,7 +65,14 @@ public class TaskService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this group");
         }
 
-        List<Task> tasks = taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
+        List<Task> tasks;
+        if (completed != null) {
+            tasks = taskRepository.findByKanbanGroupIdAndIsCompletedOrderByOrderPositionAsc(groupId, completed);
+        } else {
+            tasks = taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
+        }
+
+        // List<Task> tasks = taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
         return tasks.stream().map(this::mapToTaskResponse).collect(Collectors.toList());
     }
 
@@ -132,14 +156,14 @@ public class TaskService {
         // Проверяем группу и права доступа
         KanbanGroup kanbanGroup = kanbanGroupRepository.findById(groupId)
                 .orElseThrow(() -> new KanbanGroupNotFoundException("Kanban group not found with id: " + groupId));
-    
+
         if (!kanbanGroup.getProject().getOwnerId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this group");
         }
-    
+
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + taskId));
-    
+
         // Обновляем данные задачи
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
@@ -148,22 +172,22 @@ public class TaskService {
         task.setColor(request.getColorId() != null ? colorRepository.findById(request.getColorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Color not found")) : null);
         task.setUpdatedAt(LocalDateTime.now());
-    
+
         // Если группа задачи изменена (перемещение в другую группу)
         Long newGroupId = groupId; // Используем новую переменную для хранения ID группы
         if (request.getKanbanGroupId() != null) {
             KanbanGroup newGroup = kanbanGroupRepository.findById(request.getKanbanGroupId())
                     .orElseThrow(() -> new KanbanGroupNotFoundException("New group not found"));
-    
+
             // Проверка, что новая группа принадлежит тому же проекту
             if (!newGroup.getProject().getId().equals(kanbanGroup.getProject().getId())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot move task to another project");
             }
-    
+
             task.setKanbanGroup(newGroup);
             newGroupId = newGroup.getId(); // Обновляем newGroupId для пересчёта orderPosition
         }
-    
+
         // Если переданы параметры для перестановки, пересчитываем order_position
         if (request.getPrevId() != null || request.getNextId() != null) {
             String orderPosition;
@@ -194,83 +218,25 @@ public class TaskService {
             }
             task.setOrderPosition(orderPosition);
         }
-    
+
         // Если dueDate изменено, обновляем уведомление
         if (task.getDueDate() != null) {
             String message = "Напоминание: задача \"" + task.getTitle() + "\" заканчивается через час!";
             notificationService.createNotificationForTask(task.getAuthor(), message, task.getDueDate());
         }
-    
+
         Task updatedTask = taskRepository.save(task);
         return mapToTaskResponse(updatedTask);
     }
 
-    // public TaskResponse updateTask(Long groupId, Long taskId, CreateTaskRequest
-    // request, Long userId) {
-    // // Проверяем группу и права доступа
-    // KanbanGroup kanbanGroup = kanbanGroupRepository.findById(groupId)
-    // .orElseThrow(() -> new KanbanGroupNotFoundException("Kanban group not found
-    // with id: " + groupId));
+    public Map<Long, List<TaskResponse>> getTasksByProjectId(Project project, Boolean completed) {
+        List<KanbanGroup> groups = kanbanGroupRepository.findByProjectId(project.getId());
 
-    // if (!kanbanGroup.getProject().getOwnerId().equals(userId)) {
-    // throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have
-    // access to this group");
-    // }
-
-    // Task task = taskRepository.findById(taskId)
-    // .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " +
-    // taskId));
-
-    // // Обновляем данные задачи
-    // task.setTitle(request.getTitle());
-    // task.setDescription(request.getDescription());
-    // task.setDueDate(request.getDueDate());
-    // task.setPriority(request.getPriority());
-    // task.setColor(request.getColorId() != null ?
-    // colorRepository.findById(request.getColorId())
-    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Color
-    // not found")) : null);
-    // task.setUpdatedAt(LocalDateTime.now());
-
-    // // Если переданы параметры для перестановки, пересчитываем order_position
-    // if (request.getPrevId() != null || request.getNextId() != null) {
-    // String orderPosition;
-    // if (request.getPrevId() != null && request.getNextId() != null) {
-    // Task prevTask = taskRepository.findById(request.getPrevId())
-    // .orElseThrow(() -> new TaskNotFoundException(
-    // "Previous task not found with id: " + request.getPrevId()));
-    // Task nextTask = taskRepository.findById(request.getNextId())
-    // .orElseThrow(
-    // () -> new TaskNotFoundException("Next task not found with id: " +
-    // request.getNextId()));
-    // orderPosition = LexoRank.calculateBetween(prevTask.getOrderPosition(),
-    // nextTask.getOrderPosition());
-    // if (orderPosition == null) {
-    // redistributeTaskOrderPositions(groupId);
-    // orderPosition = LexoRank.calculateBetween(prevTask.getOrderPosition(),
-    // nextTask.getOrderPosition());
-    // }
-    // } else if (request.getPrevId() == null && request.getNextId() != null) {
-    // Task nextTask = taskRepository.findById(request.getNextId())
-    // .orElseThrow(
-    // () -> new TaskNotFoundException("Next task not found with id: " +
-    // request.getNextId()));
-    // orderPosition = LexoRank.calculateBefore(nextTask.getOrderPosition());
-    // } else if (request.getPrevId() != null && request.getNextId() == null) {
-    // Task prevTask = taskRepository.findById(request.getPrevId())
-    // .orElseThrow(() -> new TaskNotFoundException(
-    // "Previous task not found with id: " + request.getPrevId()));
-    // orderPosition = LexoRank.calculateAfter(prevTask.getOrderPosition());
-    // } else {
-    // throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid
-    // combination of prevId and nextId");
-    // }
-    // task.setOrderPosition(orderPosition);
-    // }
-
-    // Task updatedTask = taskRepository.save(task);
-    // return mapToTaskResponse(updatedTask);
-    // }
+        return groups.stream()
+                .collect(Collectors.toMap(
+                        KanbanGroup::getId,
+                        group -> getTasksByGroupId(group.getId(), project.getOwnerId(), completed)));
+    }
 
     private void redistributeTaskOrderPositions(Long groupId) {
         List<Task> tasks = taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);

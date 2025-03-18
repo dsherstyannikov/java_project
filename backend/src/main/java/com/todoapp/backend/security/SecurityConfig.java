@@ -63,6 +63,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/v1/auth/**").permitAll() // Разрешаем доступ к авторизационным маршрутам
                         .requestMatchers("/v1/projects/**").authenticated() // Защищаем маршруты проектов
+                        .requestMatchers("/v1/colors/**").authenticated()
+                        .requestMatchers("/v1/groups/**").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(customAuthenticationEntryPoint))

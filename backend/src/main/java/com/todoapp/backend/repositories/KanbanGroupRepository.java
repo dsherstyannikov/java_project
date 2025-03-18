@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface KanbanGroupRepository extends JpaRepository<KanbanGroup, Long> {
     List<KanbanGroup> findByProjectIdOrderByOrderPositionAsc(Long projectId);
+    List<KanbanGroup> findByProjectId(Long projectId);
 }

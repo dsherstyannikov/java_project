@@ -2,10 +2,13 @@ package com.todoapp.backend.controllers;
 
 import com.todoapp.backend.dto.CreateProjectRequest;
 import com.todoapp.backend.dto.ProjectResponse;
+import com.todoapp.backend.dto.TaskResponse;
 import com.todoapp.backend.security.JwtUtil;
 import com.todoapp.backend.services.ProjectService;
+import com.todoapp.backend.services.TaskService;
 import com.todoapp.backend.services.UserDetailsImpl;
 import com.todoapp.backend.repositories.UserRepository; // Подключаем репозиторий
+import com.todoapp.backend.models.Project;
 import com.todoapp.backend.models.User; // Подключаем модель User
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -22,6 +26,9 @@ public class ProjectController {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private TaskService taskService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -58,20 +65,6 @@ public class ProjectController {
         }
         return null; // Если пользователь не найден
     }
-
-    // @GetMapping("/{id}")
-    // public ResponseEntity<ProjectResponse> getProjectById(
-    // @PathVariable Long id,
-    // HttpServletRequest httpRequest) {
-    // // Проверяем токен и извлекаем username
-    // String token = jwtUtil.extractTokenFromRequest(httpRequest);
-    // String username = jwtUtil.extractUsername(token);
-
-    // // Получаем проект по ID
-    // ProjectResponse response = projectService.getProjectById(id);
-
-    // return ResponseEntity.ok(response);
-    // }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long id,
@@ -114,5 +107,20 @@ public class ProjectController {
         projectService.deleteProject(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/tasks")
+    public ResponseEntity<Map<Long, List<TaskResponse>>> getTasksByProjectId(
+            @PathVariable Long id,
+            @RequestParam(required = false) Boolean completed,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+        // Проверяем доступ к проекту и получаем его
+        Project project = projectService.getProjectByIdWithOwnerCheck(id, userDetails.getId());
+
+        // Получаем задачи проекта, сгруппированные по группам
+        Map<Long, List<TaskResponse>> groupedTasks = taskService.getTasksByProjectId(project, completed);
+
+        return ResponseEntity.ok(groupedTasks);
     }
 }

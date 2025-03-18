@@ -169,41 +169,7 @@ public class KanbanGroupService {
         return mapToKanbanGroupResponse(updatedKanbanGroup);
     }
 
-    // private String calculateOrderPosition(KanbanGroup prevGroup, KanbanGroup
-    // nextGroup) {
-    // if (prevGroup == null && nextGroup == null) {
-    // // Если это первая группа, начинаем с минимального значения
-    // return "a0000000";
-    // } else if (prevGroup == null) {
-    // // Если это первая группа, но есть следующая, вычисляем значение перед
-    // следующей
-    // return LexoRank.calculateBefore(nextGroup.getOrderPosition());
-    // } else if (nextGroup == null) {
-    // // Если это последняя группа, вычисляем значение после предыдущей
-    // return LexoRank.calculateAfter(prevGroup.getOrderPosition());
-    // } else {
-    // // Если есть и предыдущая, и следующая группы, вычисляем значение между ними
-    // return LexoRank.calculateBetween(prevGroup.getOrderPosition(),
-    // nextGroup.getOrderPosition());
-    // }
-    // }
-
-    // private void redistributeOrderPositions(Long projectId) {
-    // List<KanbanGroup> groups =
-    // kanbanGroupRepository.findByProjectIdOrderByOrderPositionAsc(projectId);
-    // if (groups.isEmpty()) {
-    // return;
-    // }
-
-    // // Перераспределяем order_position
-    // String currentPosition = "a0000000";
-    // for (KanbanGroup group : groups) {
-    // group.setOrderPosition(currentPosition);
-    // currentPosition = LexoRank.calculateAfter(currentPosition);
-    // }
-
-    // kanbanGroupRepository.saveAll(groups);
-    // }
+    
 
     private KanbanGroupResponse mapToKanbanGroupResponse(KanbanGroup kanbanGroup) {
         KanbanGroupResponse response = new KanbanGroupResponse();
