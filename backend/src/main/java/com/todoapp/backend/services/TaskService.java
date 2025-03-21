@@ -262,7 +262,15 @@ public class TaskService {
         response.setDueDate(task.getDueDate());
         response.setPriority(task.getPriority());
         response.setCompleted(task.isCompleted());
-        response.setColorId(task.getColor() != null ? task.getColor().getId() : null);
+         // Установка данных цвета
+        if (task.getColor() != null) {
+            response.setColorId(task.getColor().getId());
+            response.setColorHashCode(task.getColor().getHashCode()); // Добавлено
+        } else {
+            response.setColorId(null);
+            response.setColorHashCode(null);
+        }
+        // response.setColorId(task.getColor() != null ? task.getColor().getId() : null);
         response.setCreatedAt(task.getCreatedAt());
         response.setUpdatedAt(task.getUpdatedAt());
         return response;

@@ -17,12 +17,14 @@ public class LexoRank {
         while (s.length() < LENGTH) {
             s = "0" + s;
         }
+        System.out.println(s);
         return s;
     }
 
     // Возвращает первый ранг при отсутствии элементов
     public static String initialRank() {
-        return formatRank(DEFAULT_GAP);
+        return "a0000000";
+        // return formatRank(DEFAULT_GAP);
     }
 
     // Рассчитывает ранг, который идёт после указанного

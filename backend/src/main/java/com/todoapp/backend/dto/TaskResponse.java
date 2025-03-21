@@ -16,10 +16,20 @@ public class TaskResponse {
     private Long colorId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String colorHashCode;
 
     // Геттеры и сеттеры
     public Long getId() {
         return id;
+    }
+
+     // Геттеры и сеттеры
+     public String getColorHashCode() {
+        return colorHashCode;
+    }
+
+    public void setColorHashCode(String colorHashCode) {
+        this.colorHashCode = colorHashCode;
     }
 
     public void setId(Long id) {
