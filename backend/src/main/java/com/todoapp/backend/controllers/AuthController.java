@@ -243,15 +243,35 @@ public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequest signUp
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookieResponse.toString())
                     .body(new JwtResponse(newAccessToken)); // refresh-токен не возвращаем в теле
         } catch (RuntimeException e) {
-            logger.error("Refresh token error: ", e);
-            ErrorDetails errorDetails = new ErrorDetails(new Date(), e.getMessage(), "/api/v1/auth/refresh");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorDetails);
-        } catch (Exception e) {
-            logger.error("Refresh token processing error: ", e);
-            ErrorDetails errorDetails = new ErrorDetails(new Date(), "Произошла ошибка при обновлении токена.",
-                    "/api/v1/auth/refresh");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDetails);
-        }
+                logger.error("Refresh token error: ", e);
+                // Создаем куку для удаления refreshToken
+                ResponseCookie deleteRefreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                        .httpOnly(true)
+                        .secure(false)
+                        .path("/")
+                        .maxAge(0)
+                        .sameSite("lax")
+                        .build();
+                ErrorDetails errorDetails = new ErrorDetails(new Date(), e.getMessage(), "/api/v1/auth/refresh");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .header(HttpHeaders.SET_COOKIE, deleteRefreshTokenCookie.toString())
+                        .body(errorDetails);
+            } catch (Exception e) {
+                logger.error("Refresh token processing error: ", e);
+                // Создаем куку для удаления refreshToken
+                ResponseCookie deleteRefreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                        .httpOnly(true)
+                        .secure(false)
+                        .path("/")
+                        .maxAge(0)
+                        .sameSite("lax")
+                        .build();
+                ErrorDetails errorDetails = new ErrorDetails(new Date(), "Произошла ошибка при обновлении токена.",
+                        "/api/v1/auth/refresh");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .header(HttpHeaders.SET_COOKIE, deleteRefreshTokenCookie.toString())
+                        .body(errorDetails);
+            }
     }
 
     @PostMapping("/logout")
