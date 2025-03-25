@@ -72,7 +72,8 @@ public class TaskService {
             tasks = taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
         }
 
-        // List<Task> tasks = taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
+        // List<Task> tasks =
+        // taskRepository.findByKanbanGroupIdOrderByOrderPositionAsc(groupId);
         return tasks.stream().map(this::mapToTaskResponse).collect(Collectors.toList());
     }
 
@@ -165,13 +166,25 @@ public class TaskService {
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + taskId));
 
         // Обновляем данные задачи
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
-        task.setDueDate(request.getDueDate());
-        task.setPriority(request.getPriority());
-        task.setColor(request.getColorId() != null ? colorRepository.findById(request.getColorId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Color not found")) : null);
-        task.setUpdatedAt(LocalDateTime.now());
+        // Обновляем данные задачи
+        if (request.getTitle() != null) {
+            task.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            task.setDescription(request.getDescription());
+        }
+        if (request.getDueDate() != null) {
+            task.setDueDate(request.getDueDate());
+        }
+        if (request.getPriority() != null) {
+            task.setPriority(request.getPriority());
+        }
+        if (request.getColorId() != null) {
+            task.setColor(colorRepository.findById(request.getColorId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Color not found")));
+        }
+        
+        task.setCompleted(request.isCompleted());
 
         // Если группа задачи изменена (перемещение в другую группу)
         Long newGroupId = groupId; // Используем новую переменную для хранения ID группы
@@ -262,7 +275,7 @@ public class TaskService {
         response.setDueDate(task.getDueDate());
         response.setPriority(task.getPriority());
         response.setCompleted(task.isCompleted());
-         // Установка данных цвета
+        // Установка данных цвета
         if (task.getColor() != null) {
             response.setColorId(task.getColor().getId());
             response.setColorHashCode(task.getColor().getHashCode()); // Добавлено
@@ -270,7 +283,8 @@ public class TaskService {
             response.setColorId(null);
             response.setColorHashCode(null);
         }
-        // response.setColorId(task.getColor() != null ? task.getColor().getId() : null);
+        // response.setColorId(task.getColor() != null ? task.getColor().getId() :
+        // null);
         response.setCreatedAt(task.getCreatedAt());
         response.setUpdatedAt(task.getUpdatedAt());
         return response;

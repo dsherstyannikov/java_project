@@ -16,6 +16,16 @@ public class CreateTaskRequest {
     private LocalDateTime dueDate;
     private Integer priority;
     private Long colorId;
+    private boolean isCompleted;
+
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+    
+    public void setCompleted(boolean completed) {
+        isCompleted = completed;
+    }
 
     // Геттеры и сеттеры
     public String getTitle() {
